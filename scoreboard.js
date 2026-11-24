@@ -1,0 +1,14 @@
+'use strict';
+const $=id=>document.getElementById(id),NAMES={jodoshi:'助動詞',yougen:'用言',culture:'古文常識'},MISSIONS={jodoshi:5,yougen:3,culture:5};
+function element(parent,tag,value,cls){const el=document.createElement(tag);el.textContent=value;if(cls)el.className=cls;parent.append(el);return el}
+function render(){const core=window.KobunScore,d=core.read(),today=d.day.date===core.today()?d.day.counted:{jodoshi:[],yougen:[],culture:[]};let right=0,answered=0,viewed=0;for(const u of core.units){right+=d.totals[u].right;answered+=d.totals[u].right+d.totals[u].wrong;viewed+=d.totals[u].viewed}
+$('xp').textContent=d.xp.toLocaleString('ja-JP')+' PT';$('level').textContent='LEVEL '+(1+Math.floor(d.xp/300));$('progress').style.width=d.xp%300/300*100+'%';$('remain').textContent='次のレベルまで '+(300-d.xp%300)+' PT';$('accuracy').textContent=answered?Math.round(right/answered*100)+'%':'—';$('answered').textContent=answered+'問';$('viewed').textContent=viewed+'問';
+$('units').textContent='';$('missions').textContent='';let done=0;
+for(const u of core.units){const t=d.totals[u],n=t.right+t.wrong,rate=n?Math.round(t.right/n*100):0,b=d.best[u],weak=Object.keys(d.weak).filter(k=>k.startsWith(u+':')).length;
+const card=element($('units'),'section','','unit');const row=element(card,'div','','unit-head');element(row,'b',NAMES[u]);element(row,'strong',n?rate+'%':'—','mint');element(card,'p','自力回答 '+n+'問 ／ 解答確認 '+t.viewed+'問','small');const track=element(card,'div','','track'),fill=element(track,'div','');fill.style.width=rate+'%';element(card,'p','自己ベスト：'+(b?b.rate+'%・'+b.n+'問':'未記録')+' ／ 復習対象 '+weak+'種類','small');
+const seen=new Set(today[u]||[]).size,total=MISSIONS[u];if(seen>=total)done++;
+const m=element($('missions'),'div','','mission'+(seen>=total?' complete':''));element(m,'span',seen>=total?'✓':'○','mark');const body=element(m,'div','','mission-body');const line=element(body,'div','','line');element(line,'b',NAMES[u]+'を'+total+'問解く');element(line,'span',Math.min(total,seen)+' / '+total,'small');const bar=element(body,'div','','track');const p=element(bar,'div','');p.style.width=Math.min(100,seen/total*100)+'%'}
+$('completed').textContent=done+' / 3 達成';$('recent').textContent='';if(!d.recent.length)element($('recent'),'p','まだ保存された学習結果はありません。各単元で履歴保存をONにすると、次回から記録されます。','fine');
+for(const a of d.recent.slice(0,7)){const row=element($('recent'),'div','','recent-entry'),left=element(row,'div','');element(left,'b',NAMES[a.u]);element(left,'p',a.date+' ／ 正解'+a.right+'・不正解'+a.wrong+'・解答確認'+a.viewed,'small');element(row,'b','+'+a.earned+'PT','gold')}
+$('notice').hidden=d.recent.length>0}
+$('reset').addEventListener('click',()=>{if(confirm('この端末のスコア・ミッション・自己ベストをすべて消去しますか？各単元の従来の学習履歴は残ります。')){if(window.KobunScore.clear())render();else alert('削除できませんでした。')}});render();
